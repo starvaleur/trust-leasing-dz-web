@@ -21,7 +21,9 @@
     <div class="font-bold mb-2">دعم Trust Leasing DZ</div>
     <p class="text-sm text-gray-700">
       ❓ <b>كيف أدفع؟</b><br>
-      عبر BaridiMob أو Wimpy باستخدام الباركود.<br><br>
+      - عبر BaridiMob أو Wimpy (للجزائريين)<br>
+      - بالعملات الرقمية (USDT, EUROC, XRP)<br>
+      - نقداً للمقيمين في تونس<br><br>
       ❓ <b>هل السيارات متوفرة في باب الزوار؟</b><br>
       نعم، جميع السيارات متاحة في مكتبنا بباب الزوار.
     </p>
@@ -30,7 +32,7 @@
 
   <script>
     // 🔁 SET YOUR BACKEND URL HERE
-    const BACKEND_URL = 'http://localhost:5000';
+    const BACKEND_URL = 'https://trust-leasing-dz.onrender.com';
     const GITHUB_USERNAME = 'starvaleur';
     let cars = [], selectedCar = null, userType = '', pickupDate = '', returnDate = '', currentLang = 'ar';
 
@@ -99,51 +101,169 @@
           <input type="date" id="pickup" class="w-full p-2 border rounded mb-3" min="${new Date().toISOString().split('T')[0]}"/>
           <label class="block mb-1 font-bold">تاريخ الإرجاع</label>
           <input type="date" id="return" class="w-full p-2 border rounded mb-4"/>
+
           <p class="font-bold my-2 text-center">اختر طريقتك:</p>
-          <div class="grid grid-cols-2 gap-2 mb-4">
-            <button onclick="setUserType('algerian')" id="btn-alg" class="p-3 border rounded text-center bg-blue-50">🇩🇿 جزائري</button>
-            <button onclick="setUserType('tourist')" id="btn-tourist" class="p-3 border rounded text-center bg-gray-100">🌍 زائر</button>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <button onclick="setUserType('algerian')" id="btn-alg"
+                    class="p-3 border rounded text-center bg-blue-50">
+              🇩🇿 جزائري
+            </button>
+            <button onclick="setUserType('tunisian')" id="btn-tun"
+                    class="p-3 border rounded text-center bg-green-50">
+              🇹🇳 تونسي
+            </button>
+            <button onclick="setUserType('tourist')" id="btn-tourist"
+                    class="p-3 border rounded text-center bg-gray-100">
+              🌍 زائر
+            </button>
           </div>
-          <button onclick="showPayment()" id="continue-btn" class="w-full bg-blue-600 text-white p-3 rounded font-bold" disabled>المتابعة</button>
+
+          <button onclick="showPayment()" id="continue-btn" 
+                  class="w-full bg-blue-600 text-white p-3 rounded font-bold" disabled>
+            المتابعة
+          </button>
         </div>
       `;
     }
 
     function setUserType(type) {
       userType = type;
-      document.getElementById('btn-alg').className = type === 'algerian' ? 'p-3 border rounded text-center bg-blue-500 text-white' : 'p-3 border rounded text-center bg-blue-50';
-      document.getElementById('btn-tourist').className = type === 'tourist' ? 'p-3 border rounded text-center bg-blue-500 text-white' : 'p-3 border rounded text-center bg-gray-100';
+      // Reset all buttons
+      document.getElementById('btn-alg').className = 'p-3 border rounded text-center bg-blue-50';
+      document.getElementById('btn-tun').className = 'p-3 border rounded text-center bg-green-50';
+      document.getElementById('btn-tourist').className = 'p-3 border rounded text-center bg-gray-100';
+      
+      // Highlight selected
+      if (type === 'algerian') document.getElementById('btn-alg').className = 'p-3 border rounded text-center bg-blue-500 text-white';
+      if (type === 'tunisian') document.getElementById('btn-tun').className = 'p-3 border rounded text-center bg-green-500 text-white';
+      if (type === 'tourist') document.getElementById('btn-tourist').className = 'p-3 border rounded text-center bg-blue-500 text-white';
+      
       document.getElementById('continue-btn').disabled = false;
     }
 
     function showPayment() {
       pickupDate = document.getElementById('pickup').value;
       returnDate = document.getElementById('return').value;
+      
       if (!pickupDate || !returnDate || new Date(returnDate) <= new Date(pickupDate)) {
-        alert('الرجاء تحديد تواريخ صحيحة');
+        alert(getText('please_select_dates'));
         return;
       }
+
       const days = (new Date(returnDate) - new Date(pickupDate)) / (1000 * 60 * 60 * 24);
-      const total = (days * selectedCar.dailyPrice).toFixed(2);
+      let total, currency;
+
+      if (userType === 'tunisian') {
+        total = (days * selectedCar.dailyPrice * 3.4).toFixed(2); // EUR to TND
+        currency = 'TND';
+      } else {
+        total = (days * selectedCar.dailyPrice).toFixed(2);
+        currency = '€';
+      }
 
       if (userType === 'algerian') {
         document.getElementById('app').innerHTML = `
           <header class="bg-blue-600 text-white p-3 text-center">طريقة الدفع</header>
           <div class="p-3">
-            <p class="font-bold text-center mb-3">المبلغ: €${total}</p>
+            <p class="font-bold text-center mb-3">المبلغ: ${total} ${currency}</p>
+            
+            <!-- BaridiMob -->
             <div class="bg-blue-50 p-3 rounded mb-4">
-              <h3 class="font-bold text-blue-800">BaridiMob</h3>
-              <img src="https://raw.githubusercontent.com/starvaleur/trust-leasing-dz/main/public/images/baridimob_qr.jpg" class="w-full h-40 object-contain border rounded my-2"/>
+              <h3 class="font-bold text-blue-800 flex items-center">
+                <span class="material-icons mr-2">qr_code</span> BaridiMob
+              </h3>
+              <img src="https://raw.githubusercontent.com/${GITHUB_USERNAME}/trust-leasing-dz/main/public/images/baridimob_qr.jpg" 
+                   class="w-full h-40 object-contain border rounded my-2"/>
             </div>
+            
+            <!-- Wimpy -->
             <div class="bg-orange-50 p-3 rounded mb-4">
-              <h3 class="font-bold text-orange-800">Wimpy</h3>
-              <img src="https://raw.githubusercontent.com/starvaleur/trust-leasing-dz/main/public/images/wimpy_qr.jpg" class="w-full h-40 object-contain border rounded my-2"/>
+              <h3 class="font-bold text-orange-800 flex items-center">
+                <span class="material-icons mr-2">qr_code</span> Wimpy
+              </h3>
+              <img src="https://raw.githubusercontent.com/${GITHUB_USERNAME}/trust-leasing-dz/main/public/images/wimpy_qr.jpg" 
+                   class="w-full h-40 object-contain border rounded my-2"/>
             </div>
-            <button onclick="confirmBooking()" class="w-full bg-green-600 text-white p-3 rounded font-bold">تم الدفع – تأكيد الحجز</button>
+
+            <!-- 💰 CRYPTO PAYMENT OPTION -->
+            <div class="bg-purple-50 p-3 rounded mb-4 border border-purple-200">
+              <h3 class="font-bold text-purple-800 flex items-center mb-2">
+                <span class="material-icons mr-2">account_balance_wallet</span> أو ادفع بالعملات الرقمية
+              </h3>
+              
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <div class="bg-white p-1 rounded text-center text-xs">USDT (ERC-20)</div>
+                <div class="bg-white p-1 rounded text-center text-xs">EUROC (Euro)</div>
+                <div class="bg-white p-1 rounded text-center text-xs">XRP</div>
+                <div class="bg-white p-1 rounded text-center text-xs">Pi Network</div>
+              </div>
+
+              <!-- QR Selector -->
+              <select id="crypto-select" onchange="showCryptoQR()" class="w-full p-1 border rounded text-xs mb-2">
+                <option value="usdt">USDT (Ethereum)</option>
+                <option value="euroc">EUROC (Euro)</option>
+                <option value="xrp">XRP (Ripple)</option>
+                <option value="pi">Pi Network</option>
+              </select>
+
+              <div id="crypto-qr-container" class="text-center">
+                <img id="crypto-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=0xYOUR_EUROC_ADDRESS" class="w-32 h-32 object-contain border rounded inline-block"/>
+                <p id="crypto-instructions" class="text-xs text-gray-600 mt-1">ارسل المبلغ exact عبر شبكة صحيحة</p>
+              </div>
+            </div>
+
+            <button onclick="confirmBooking()" class="w-full bg-green-600 text-white p-3 rounded font-bold mt-2">
+              تم الدفع – تأكيد الحجز
+            </button>
           </div>
         `;
+        
+        // Initialize crypto QR
+        showCryptoQR();
+      } 
+      else if (userType === 'tunisian') {
+        document.getElementById('app').innerHTML = `
+          <div class="p-4 text-center mt-10">
+            <h2 class="text-xl font-bold">الدفع نقداً في تونس</h2>
+            <p class="mt-2">يرجى دفع ${total} TND عند استلام السيارة</p>
+            <button onclick="confirmBooking()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">تأكيد الحجز</button>
+          </div>
+        `;
+      }
+      else {
+        document.getElementById('app').innerHTML = `
+          <div class="p-4 text-center mt-10">
+            <h2 class="text-xl font-bold">الدفع نقداً (EUR/USD)</h2>
+            <p class="mt-2">يرجى الدفع عند استلام السيارة</p>
+            <button onclick="confirmBooking()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">تأكيد الحجز</button>
+          </div>
+        `;
+      }
+    }
+
+    function showCryptoQR() {
+      const select = document.getElementById('crypto-select');
+      const qrImg = document.getElementById('crypto-qr');
+      const instructions = document.getElementById('crypto-instructions');
+      const crypto = select.value;
+      
+      // 🔁 REPLACE WITH YOUR REAL ADDRESSES
+      const addresses = {
+        usdt: '0xYOUR_USDT_ADDRESS',
+        euroc: '0xYOUR_EUROC_ADDRESS',
+        xrp: 'YOUR_XRP_ADDRESS',
+        pi: 'YOUR_PI_USERNAME'
+      };
+      
+      const address = addresses[crypto] || '0x...';
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(address)}`;
+      
+      if (crypto === 'pi') {
+        instructions.innerHTML = 'سيتم تفعيل Pi Network قريباً بعد إطلاق Mainnet!';
+      } else if (crypto === 'xrp') {
+        instructions.innerHTML = 'أضف Destination Tag إن طُلب';
       } else {
-        confirmBooking();
+        instructions.innerHTML = 'استخدم شبكة Ethereum (ERC-20)';
       }
     }
 
@@ -154,8 +274,20 @@
           <h2 class="text-xl font-bold">تم الحجز بنجاح!</h2>
           <p class="mt-2">سيتم التحقق من الدفع خلال 10 دقائق</p>
           <p class="mt-2 text-sm text-gray-600">مرجع: BK-${Date.now()}</p>
-          <a href="tel:+213555123456" class="mt-4 block w-full bg-green-600 text-white p-3 rounded font-bold">اتصل بمكتبنا: 05 55 12 34 56</a>
-          <button onclick="fetchCars()" class="mt-3 w-full bg-blue-600 text-white p-3 rounded">العودة إلى الرئيسية</button>
+          
+          <!-- Call Office -->
+          <a href="tel:+213555123456" class="mt-4 block w-full bg-green-600 text-white p-3 rounded font-bold">
+            اتصل بمكتبنا: 05 55 12 34 56
+          </a>
+          
+          <!-- Print Receipt -->
+          <button onclick="window.print()" class="mt-3 w-full bg-blue-600 text-white p-3 rounded font-bold">
+            🖨️ طباعة الإيصال
+          </button>
+          
+          <button onclick="fetchCars()" class="mt-3 w-full bg-gray-600 text-white p-3 rounded">
+            العودة إلى الرئيسية
+          </button>
         </div>
       `;
     }
@@ -167,9 +299,17 @@
       fetchCars();
     }
 
+    function getText(key) {
+      const translations = {
+        'please_select_dates': { ar: 'الرجاء تحديد التواريخ', fr: 'Veuillez sélectionner les dates' },
+      };
+      return translations[key]?.[currentLang] || key;
+    }
+
     function triggerSOS() {
       if (confirm('هل تحتاج مساعدة طارئة؟')) {
         alert('تم إرسال طلب المساعدة! سيتم الاتصال بك فوراً.');
+        // Optional: window.location.href = 'tel:+213555123456';
       }
     }
 
@@ -180,4 +320,4 @@
     fetchCars();
   </script>
 </body>
-  </html>
+</html>
